@@ -21,18 +21,19 @@ import { readAndCompressImage } from "browser-image-resizer";
 
 // configs for image resizing
 //TODO: add image configurations
-
+ 
 import { MdAddCircleOutline } from "react-icons/md";
 
 import { v4 } from "uuid";
 
-// context stuffs
 import { ContactContext } from "../context/Context";
 import { CONTACT_TO_UPDATE } from "../context/action.types";
 
 import { useHistory } from "react-router-dom";
 
 import { toast } from "react-toastify";
+import { imageConfig } from "../Config/ImageConfig";
+
 
 const AddContact = () => {
   // destructuring state and dispatch from context state
@@ -72,7 +73,51 @@ const AddContact = () => {
 
   // To upload image to firebase and then set the the image link in the state of the app
   const imagePicker = async e => {
-    // TODO: upload image and set D-URL to state
+      try {
+        const file=e.contact.files[0];
+        var metaData={
+          contentType:file.type
+        }
+        let resizedImg=await readAndCompressImage(file,imageConfig)
+        const storageRef=await firebase.storage().ref()
+        var uploadTask=storageRef
+          .child('images'+file.name)
+          .put(resizedImg,metaData)
+
+        uploadTask.on(
+          firebase.storage.TaskEvent.STATR_CHANGED,
+          snapshot=>{
+            setIsUploading(true)
+            var progress=(snapshot.bytesTransferred/snapshot.totalBytes)*100
+          
+          switch (snapshot.state) {
+            case firebase.storage.TaskState.PAUSED:
+              setIsUpdate(false);
+              console.log("Uploading is paused");
+              break;
+            case firebase.storage.TaskState.RUNNING:
+              console.log("Uploading is in progress...")
+              break;
+          }
+          if(progress==100){
+            isUploading(false);
+            toast("Upload Success",{type:"success"})
+          }
+      },
+      error=>{
+        toast("something is wrong in State change",{type:"error"})
+      },()=>{
+        uploadTask.snapshot.ref.getDownloadURL()
+        .then(downloadUrl=>{
+          setDownloadUrl(downloadUrl);
+        })
+        .catch(err=>console.log(err));
+      }
+      );
+      } catch (error) {
+        console.error(error)
+        toast("something went wrong",{type:"error"})
+      }
   };
 
   // setting contact to firebase DB

@@ -1,5 +1,3 @@
-//TODO: create contact using all actions
-
 import {
   SET_CONTACT,
   SET_LOADING,
@@ -7,7 +5,6 @@ import {
   SET_SINGLE_CONTACT
 } from "./action.types";
 
-//TODO: use switch case
 export default (state,action)=>{
   switch (action.type) {
 
